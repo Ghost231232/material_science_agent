@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GHOST — Personal Archive · 做点东西，记下所想</title>
+  <meta name="description" content="GHOST — Personal Archive：个人作品集、博客与创作档案。关于 AI、创作，以及那些还没想明白的事。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&family=EB+Garamond:ital@0;1&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body id="top">
+
+  <!-- ============ 海报式悬浮导航 ============ -->
+  <nav class="nav" id="nav" aria-label="主导航">
+    <div class="nav__row container">
+      <a class="nav__brand" href="#top">
+        <strong>GHOST</strong>
+        <span>PERSONAL ARCHIVE</span>
+      </a>
+      <button class="nav__toggle" id="navToggle" aria-expanded="false" aria-controls="navLinks">菜单</button>
+      <div class="nav__links" id="navLinks"></div>
+    </div>
+  </nav>
+
+  <!-- ============ Hero：深蓝留白 + 红潮 ============ -->
+  <header class="hero">
+    <img class="hero__tide" src="assets/tide.svg" alt="红橙色手绘潮水插画" loading="eager" />
+    <div class="hero__edge" aria-hidden="true">
+      SHOW WHAT I MAKE · RECORD WHAT I THINK · GHOST — PERSONAL ARCHIVE · EST. 2026 ·
+    </div>
+    <div class="container hero__inner">
+      <p class="hero__kicker reveal"><span>GHOST</span><i></i><span>PERSONAL ARCHIVE</span></p>
+      <h1 class="hero__title reveal">做点东西，<br />记下所想。</h1>
+      <p class="hero__sub reveal">关于 AI、创作，以及那些还没想明白的事。</p>
+      <blockquote class="hero__quote reveal">
+        <p>“Verweile doch! Du bist so schön!”</p>
+        <cite>— Goethe, <em>Faust</em></cite>
+        <p class="hero__quote-cn">“停留一下吧，你多么美！”（中文译文，以原文为准）</p>
+      </blockquote>
+      <a class="hero__scroll reveal" href="#works">向下探索 <span aria-hidden="true">↓</span></a>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ 精选作品（暖白 · 交错双列） ============ -->
+    <section class="section works" id="works">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__index">01 / WORKS</p>
+          <h2 class="section__title">精选作品</h2>
+          <a class="section__more" href="#">查看全部作品 →</a>
+        </header>
+        <div class="works__grid" id="worksGrid"><!-- JS 渲染 --></div>
+      </div>
+    </section>
+
+    <!-- ============ 最近随笔（暖白 · 编辑式列表） ============ -->
+    <section class="section notes" id="notes">
+      <div class="container">
+        <header class="section__head reveal">
+          <p class="section__index">02 / NOTES</p>
+          <h2 class="section__title">最近随笔</h2>
+          <a class="section__more" href="#">查看全部随笔 →</a>
+        </header>
+        <ul class="notes__list" id="notesList"><!-- JS 渲染 --></ul>
+      </div>
+    </section>
+
+    <!-- ============ About（深蓝 · 左右分栏） ============ -->
+    <section class="about" id="about">
+      <svg class="about__edge" aria-hidden="true" viewBox="0 0 300 900" preserveAspectRatio="none">
+        <path d="M 250 20 C 120 120, 200 260, 90 380 C 30 450, 180 560, 110 680 C 60 770, 170 820, 60 890"
+              fill="none" stroke="#FF3E20" stroke-width="2.5" opacity="0.55"
+              stroke-dasharray="2 10 14 8 4 16" />
+      </svg>
+      <div class="container about__grid">
+        <div class="about__label reveal">
+          <p class="section__index">03 / ABOUT</p>
+          <h2 class="section__title">关于</h2>
+        </div>
+        <div class="about__body reveal">
+          <p class="about__lead"></p>
+          <div class="about__paras"></div>
+          <ul class="about__interests"></ul>
+          <a class="about__more" href="#">了解更多 →</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ 页脚（与 About 共用深蓝） ============ -->
+  <footer class="footer">
+    <div class="container footer__row">
+      <div class="footer__brand">
+        <strong>GHOST</strong>
+        <span>PERSONAL ARCHIVE</span>
+      </div>
+      <div class="footer__social" id="footerSocial"><!-- JS 渲染 --></div>
+      <div class="footer__meta">
+        <p class="footer__closing" id="footerClosing"></p>
+        <p>© <span id="year">2026</span> GHOST · <span id="footerNote"></span></p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
