@@ -15,8 +15,8 @@ def db():
 # database.py
 # --------------------------------------------------------------------------- #
 class TestDatabase:
-    def test_loads_30_materials(self, db):
-        assert len(db) == 30
+    def test_loads_50_materials(self, db):
+        assert len(db) == 50
 
     def test_four_categories(self, db):
         cats = db.categories()
@@ -123,6 +123,12 @@ class TestSelector:
     def test_recommend_with_category(self, db):
         out = selector.recommend(db, "耐高温 陶瓷")
         assert "陶瓷" in out
+
+    def test_recommend_new_material(self, db):
+        # 测试新增材料可被查询到
+        m = db.find_one("PEEK")
+        assert m is not None
+        assert m["category"] == "聚合物"
 
     def test_recommend_no_criteria_prompts_help(self, db):
         out = selector.recommend(db, "随便看看")

@@ -7,6 +7,9 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+# 对话窗口：最多保留最近 N 条消息（含 user+assistant+tool），防止 token 爆炸
+MAX_HISTORY = 20
+
 SYSTEM_PROMPT = """你是材料科学领域的智能助手「材料助手」，面向工程师与学生。
 
 工作规则：
@@ -34,6 +37,29 @@ def _load_dotenv() -> None:
 def get_api_key() -> str | None:
     _load_dotenv()
     return os.environ.get("DEEPSEEK_API_KEY") or None
+
+
+def _trim_history(messages: list) -> list:
+    """裁剪消息历史：保留 SystemMessage + 最近 MAX_HISTORY 条对话消息。
+
+    避免长对话 token 爆炸。ToolMessage 与其对应的 AIMessage（含 tool_calls）
+    不会被拆开——如果截断点落在一对中间，向前回退到 AIMessage 之前。
+    """
+    if not messages:
+        return []
+    system = []
+    rest = messages
+    if getattr(messages[0], "type", "") == "system":
+        system = [messages[0]]
+        rest = messages[1:]
+    if len(rest) <= MAX_HISTORY:
+        return system + rest
+    # 从尾部取最近 MAX_HISTORY 条
+    window = rest[-MAX_HISTORY:]
+    # 如果窗口第一条是 ToolMessage（它的 AIMessage 被截断了），向后跳过
+    while window and getattr(window[0], "type", "") == "tool":
+        window = window[1:]
+    return system + window
 
 
 def build_graph():
@@ -73,10 +99,15 @@ def build_graph():
 
 
 def ask(graph, text: str, history: list | None = None):
-    """单轮对话：返回 (回答文本, 更新后的完整消息历史)。"""
-    from langchain_core.messages import HumanMessage
+    """单轮对话：返回 (回答文本, 更新后的完整消息历史)。
 
-    seed = list(history or [])
+    自动裁剪历史窗口防止 token 爆炸。
+    """
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    seed = _trim_history(list(history or []))
+    if not seed or getattr(seed[0], "type", "") != "system":
+        seed = [SystemMessage(content=SYSTEM_PROMPT), *seed]
     seed.append(HumanMessage(content=text))
     state = graph.invoke({"messages": seed})
     msgs = state["messages"]
@@ -89,6 +120,8 @@ def ask(graph, text: str, history: list | None = None):
 def ask_stream(graph, text: str, history: list | None = None):
     """流式对话：逐块 yield 文本片段，最后 yield 更新后的消息历史。
 
+    自动裁剪历史窗口防止 token 爆炸。
+
     用法：
         for chunk in ask_stream(graph, text, history):
             if isinstance(chunk, str):
@@ -98,10 +131,10 @@ def ask_stream(graph, text: str, history: list | None = None):
     """
     from langchain_core.messages import HumanMessage, SystemMessage
 
-    seed = list(history or [])
-    seed.append(HumanMessage(content=text))
+    seed = _trim_history(list(history or []))
     if not seed or getattr(seed[0], "type", "") != "system":
         seed = [SystemMessage(content=SYSTEM_PROMPT), *seed]
+    seed.append(HumanMessage(content=text))
 
     final_msgs: list = []
     for event in graph.stream({"messages": seed}, stream_mode="messages"):
