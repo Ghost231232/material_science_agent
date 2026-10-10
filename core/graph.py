@@ -4,8 +4,11 @@
 """
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
+
+logger = logging.getLogger("material_agent")
 
 # 对话窗口：最多保留最近 N 条消息（含 user+assistant+tool），防止 token 爆炸
 MAX_HISTORY = 20
@@ -98,6 +101,23 @@ def build_graph():
     return builder.compile()
 
 
+def _log_token_usage(state: dict) -> None:
+    """从 LangGraph state 中提取 token 用量并记录日志。
+
+    LangChain/LangGraph 不总是把 usage 放在固定位置，这里做容错搜索。
+    """
+    msgs = state.get("messages", [])
+    for m in msgs:
+        meta = getattr(m, "usage_metadata", None) or getattr(m, "response_metadata", {}).get("token_usage")
+        if meta:
+            prompt = meta.get("input_tokens", meta.get("prompt_tokens", "?"))
+            completion = meta.get("output_tokens", meta.get("completion_tokens", "?"))
+            total = meta.get("total_tokens", "?")
+            logger.info(f"Token 用量: 输入={prompt}, 输出={completion}, 总计={total}")
+            return
+    logger.debug("Token 用量: 未获取到（流式模式可能不返回 usage metadata）")
+
+
 def ask(graph, text: str, history: list | None = None):
     """单轮对话：返回 (回答文本, 更新后的完整消息历史)。
 
@@ -111,6 +131,7 @@ def ask(graph, text: str, history: list | None = None):
     seed.append(HumanMessage(content=text))
     state = graph.invoke({"messages": seed})
     msgs = state["messages"]
+    _log_token_usage(state)
     reply = msgs[-1].content
     if isinstance(reply, list):  # 兼容 content blocks
         reply = "".join(b.get("text", "") for b in reply if isinstance(b, dict))
@@ -147,6 +168,10 @@ def ask_stream(graph, text: str, history: list | None = None):
                 if isinstance(content, str) and content:
                     yield content
         final_msgs.append(msg)
+
+    # 记录 token 用量
+    if final_msgs:
+        _log_token_usage({"messages": final_msgs})
 
     # 汇总最终消息历史
     if final_msgs:
