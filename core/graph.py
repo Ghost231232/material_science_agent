@@ -21,7 +21,7 @@ SYSTEM_PROMPT = """你是材料科学领域的智能助手「材料助手」，�
 3. 选材推荐类问题调用 recommend_materials，把用户场景转写为需求关键词（轻量化/高强度/刚度/耐磨/韧性/耐高温/导热/隔热/绝缘/导电/耐腐蚀/便宜 + 可选类别：金属/聚合物/陶瓷/复合材料），如「做飞机机身」→「轻量化 高强度 刚度」。
 4. 多材料对比调用 compare_materials；排序/最值/统计调用 rank_or_stats。
 5. 概念解释先调用 lookup_term 查本地术语库，未收录再用专业知识回答。
-6. 回答使用简体中文，简洁准确，关键数值带单位；工具返回的结果要提炼呈现，不要原样堆砌。
+6. 回答使用简体中文，详细专业，关键数值带单位；工具返回的结果要充分展开解释，包括原理、对比分析和工程建议，不要只罗列数据。
 7. 用户问数据库没有的材料（如某牌号钢）时，可调用 list_materials 查看收录范围后再答复。"""
 
 
@@ -82,7 +82,7 @@ def build_graph():
         model="deepseek-chat",
         api_key=api_key,
         base_url="https://api.deepseek.com",
-        temperature=0.3,
+        temperature=0.7,
     )
     llm_with_tools = llm.bind_tools(tools.TOOLS)
 
