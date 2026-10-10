@@ -3,6 +3,9 @@
 .env.*
 *.key
 
+# 个人文件
+.doc_text.txt
+
 # Python
 __pycache__/
 *.py[cod]
