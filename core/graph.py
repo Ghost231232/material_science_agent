@@ -84,3 +84,37 @@ def ask(graph, text: str, history: list | None = None):
     if isinstance(reply, list):  # 兼容 content blocks
         reply = "".join(b.get("text", "") for b in reply if isinstance(b, dict))
     return reply, msgs
+
+
+def ask_stream(graph, text: str, history: list | None = None):
+    """流式对话：逐块 yield 文本片段，最后 yield 更新后的消息历史。
+
+    用法：
+        for chunk in ask_stream(graph, text, history):
+            if isinstance(chunk, str):
+                print(chunk, end="", flush=True)
+            else:
+                history = chunk  # 最后一个 yield 是 list[Message]
+    """
+    from langchain_core.messages import HumanMessage, SystemMessage
+
+    seed = list(history or [])
+    seed.append(HumanMessage(content=text))
+    if not seed or getattr(seed[0], "type", "") != "system":
+        seed = [SystemMessage(content=SYSTEM_PROMPT), *seed]
+
+    final_msgs: list = []
+    for event in graph.stream({"messages": seed}, stream_mode="messages"):
+        msg, _node = event
+        # 处理 agent 节点的 LLM 流式输出（AIMessageChunk / AIMessage，跳过 ToolMessage）
+        if hasattr(msg, "content"):
+            tp = getattr(msg, "type", "")
+            if tp in ("AIMessageChunk", "AIMessage", "ai"):
+                content = msg.content
+                if isinstance(content, str) and content:
+                    yield content
+        final_msgs.append(msg)
+
+    # 汇总最终消息历史
+    if final_msgs:
+        yield final_msgs

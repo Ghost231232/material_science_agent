@@ -127,13 +127,36 @@ def _build_llm_graph():
 
 
 def _run_llm_turn(graph_mod, graph, text: str, history: list) -> tuple[str, list]:
-    """LLM 模式一轮对话，异常时回退规则引擎。"""
+    """LLM 模式一轮对话（非流式），异常时回退规则引擎。"""
     try:
         reply, history = graph_mod.ask(graph, text, history)
         return reply, history
     except Exception as e:  # 网络/Key 错误等，降级保底
         err = f"[LLM 调用失败：{e}，本轮已回退规则模式]\n"
         return err + respond(text, db), history
+
+
+def _run_llm_turn_stream(graph_mod, graph, text: str, history: list) -> tuple[str, list]:
+    """LLM 模式流式对话：逐块打印到 stdout，返回 (完整文本, 更新后历史)。
+
+    异常时回退规则引擎。
+    """
+    try:
+        chunks: list[str] = []
+        for chunk in graph_mod.ask_stream(graph, text, history):
+            if isinstance(chunk, str):
+                chunks.append(chunk)
+                print(chunk, end="", flush=True)
+            else:
+                # 最后一个 yield 是消息历史 list
+                history = chunk
+        print()  # 换行
+        return "".join(chunks), history
+    except Exception as e:
+        print(f"\n[LLM 调用失败：{e}，本轮已回退规则模式]")
+        out = respond(text, db)
+        print(out)
+        return out, history
 
 
 def main() -> None:
@@ -161,10 +184,10 @@ def main() -> None:
 
     if args:  # 单次提问模式
         if graph:
-            out, _ = _run_llm_turn(graph_mod, graph, " ".join(args), [])
+            _run_llm_turn_stream(graph_mod, graph, " ".join(args), [])
         else:
             out = respond(" ".join(args), db)
-        print(out)
+            print(out)
         return
 
     banner = [BANNER if not graph else "材料科学智能代理已启动（内置 30 种典型材料数据，DeepSeek 驱动）。输入 help 查看示例，exit 退出。"]
@@ -185,14 +208,16 @@ def main() -> None:
         if text.lower() in {"help", "帮助", "?", "？", "功能", "说明"} or not text:
             print(HELP if text else "")
             continue
+        out = ""
         if graph:
-            out, history = _run_llm_turn(graph_mod, graph, text, history)
+            out, history = _run_llm_turn_stream(graph_mod, graph, text, history)
         else:
             out = respond(text, db)
         if out == "__EXIT__":
             print("再见！")
             break
-        if out:
+        # 流式模式已实时打印，规则模式在此打印
+        if not graph and out:
             print(out)
 
 
